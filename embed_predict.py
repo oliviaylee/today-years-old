@@ -1,27 +1,15 @@
+"""
+Method 2: Train a separate neural network to predict the word embedding given the 
+definition, using a dictionary of common words as the input and the word embeddings 
+already in the model as the output.
+"""
+
 import torch
 from torch.utils.data import random_split, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-from transformers import GPT2Tokenizer, TFGPT2Model, GPT2LMHeadModel
 from model import EmbedPredictor
-import json
-
-gpt2_pt_model = GPT2LMHeadModel.from_pretrained('gpt2')  # or any other checkpoint
-word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings 
-# position_embeddings = model.transformer.wpe.weight  # Word Position Embeddings 
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-
-def preprocess_json(data):
-    assert(data == 'common' or data == 'urban' or data == 'both')
-    common_f = open('datasets/dict_wn.json')
-    common_dict = json.load(common_f)
-    common_f.close()
-    common_data = None # TO-DO: Process into (x, y)
-    urban_data = None
-    if data == 'urban':
-        # TO-DO: Unzip and preprocess Urban Dictionary
-        pass
-    return common_data, urban_data
+from dataset import JSonDataset
 
 def split_data(dataset):
     train_size, val_size = int(0.8 * len(dataset)), int(0.1 * len(dataset))
@@ -30,20 +18,8 @@ def split_data(dataset):
     train_dl, val_dl, test_dl = DataLoader(train_set, batch_size=1, shuffle=True, num_workers=2), DataLoader(val_set, batch_size=1, shuffle=False, num_workers=2), DataLoader(test_set, batch_size=1, shuffle=False, num_workers=2)
     return train_dl, val_dl, test_dl
 
-def extract_embed_y(word):
-    """
-    Returns ground truth pretrained embedding for a given word
-    """
-    text_index = tokenizer.encode(word,add_prefix_space=True)
-    if len(text_index) > 1:
-        # Remove words that are split into multiple tokens from training set
-        # TO-DO: Ask about the alternative?
-        return -1
-    embed_y = word_embeddings[text_index,:]
-    return embed_y
-
 def train(timestamp, tb_writer, eps=100, lr=0.001):
-    common_data, _ = preprocess_json('common')
+    common_data = JSonDataset('datasets/dict_wn.json')
     train_dl, val_dl, test_dl = split_data(common_data)
     model = EmbedPredictor()
     loss_fn = torch.nn.CrossEntropyLoss() # TO-DO: Ask which loss fn?
@@ -83,7 +59,7 @@ def train(timestamp, tb_writer, eps=100, lr=0.001):
         # for both training and validation
         tb_writer.add_scalars('Training vs. Validation Loss',
                         { 'Training' : avg_loss, 'Validation' : avg_vloss },
-                        epoch_number + 1)
+                        ep + 1)
         tb_writer.flush()
 
         # Track best performance, and save the model's state
@@ -99,3 +75,6 @@ def main():
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
     train(timestamp, writer)
+
+if __name__ == '__main__':
+    main()
