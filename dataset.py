@@ -1,25 +1,26 @@
 import torch
 from torch.utils.data import Dataset
-from transformers import GPT2Tokenizer, TFGPT2Model, GPT2LMHeadModel
 import json
 
-gpt2_pt_model = GPT2LMHeadModel.from_pretrained('gpt2')  # or any other checkpoint
-word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings 
-# position_embeddings = model.transformer.wpe.weight  # Word Position Embeddings 
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-
 class JSonDataset(Dataset):
-    def __init__(self, json_path):
+    def __init__(self, json_path, tokenizer, word_embeddings):
         assert(isinstance(json_path, str) and json_path[:8] == 'datasets') 
         f = open(json_path)
         raw_data = json.load(f)
         f.close()
-
+        self.tokenizer = tokenizer
+        self.word_embeds = word_embeddings
         self.samples = []
+        flattened_defns, ground_truths = [], []
         for k in raw_data.keys():
             y = self.extract_embed_y(k)
-            if isinstance(y, bool): continue # Remove words that are split into multiple tokens from training set
-            X = raw_data[k] # TO-DO: CONCATENATE DEF LISTS?
+            ground_truths.append(y)
+            flat_defn = [tok for defn in raw_data[k] for tok in defn].join(" ") # Flatten def list into list of strings
+            flattened_defns.append(flat_defn)
+        assert(len(flattened_defns) == len(ground_truths))
+        encoded_inputs = tokenizer(flattened_defns, padding=True, return_tensors="pt")
+        for i in range(len(ground_truths)):
+            X, y = encoded_inputs[i], ground_truths[i]
             self.samples.append((X, y))
 
     def __len__(self):
@@ -32,11 +33,11 @@ class JSonDataset(Dataset):
         """
         Returns ground truth pretrained embedding for a given word
         """
-        text_index = tokenizer.encode(word,add_prefix_space=True)
-        if len(text_index) > 1: # Remove words that are split into multiple tokens from training set
-            # TO-DO: Alternative: return average of embeddings
-            return False
-        embed_y = word_embeddings[text_index,:]
+        text_index = self.tokenizer.encode(word, add_prefix_space=True)
+        embed_y = self.word_embeds[text_index,:]
+        if len(text_index) > 1: # Return average of embeddings
+            embed_y_avg = torch.stack(embed_y).mean(dim=0)
+            return embed_y_avg
         return embed_y
 
 
