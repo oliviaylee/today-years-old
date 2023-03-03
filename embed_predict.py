@@ -40,7 +40,8 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
             input, label = data # input = tokenized+padded defn, label = ground truth pretrained embedding
             optimizer.zero_grad()
             outputs = model(**input) # odict_keys(['logits', 'past_key_values', 'hidden_states'])
-            last_hidden_state = outputs['hidden_states'][-1]
+            # output['hidden states'] is a Tuple of torch.FloatTensor of shape (batch_size, sequence_length, hidden_size)
+            last_hidden_state = outputs['hidden_states'][-1] # ERROR HERE: size now is [1, 1, x, 768] where x = seq length. Need to be [1, 768]
             loss = loss_fn(last_hidden_state, label)
             loss.backward()
             optimizer.step()
