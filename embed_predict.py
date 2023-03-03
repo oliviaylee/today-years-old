@@ -16,6 +16,7 @@ gpt2_pt_model = GPT2LMHeadModel.from_pretrained('gpt2')  # or any other checkpoi
 word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings 
 # position_embeddings = model.transformer.wpe.weight  # Word Position Embeddings 
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
 def split_data(dataset):
     train_size, val_size = int(0.8 * len(dataset)), int(0.1 * len(dataset))
@@ -74,11 +75,12 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
             torch.save(model.state_dict(), model_path)
 
 def learn_urban():
-    # TO-DO: Unzip Urban Dict
-    urban_data = JSonDataset('datasets/urban.json', tokenizer, word_embeddings)
+    # UNZIP: Archive('UT_raw_plus_lowercase.7z').extractall('datasets/urban_dict_words.json')
+    urban_data = JSonDataset('datasets/urban_dict_words.json', tokenizer, word_embeddings)
     for urban_word in urban_data.keys():
         text_index = tokenizer.encode(urban_word, add_prefix_space=True)
         embed_y = word_embeddings[text_index,:]
+    return None
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -89,7 +91,7 @@ def main():
     # PHASE 1: Train model on dict of common words to learn r/s between defns and embeddings 
     train(timestamp, writer)
 
-    # PHASE 2: Add add new word embeddings to GPT2 given the new definitions 
+    # [TO-DO] PHASE 2: Add add new word embeddings to GPT2 given the new definitions 
 
 if __name__ == '__main__':
     main()

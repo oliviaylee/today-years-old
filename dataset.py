@@ -15,10 +15,10 @@ class JSonDataset(Dataset):
         for k in raw_data.keys():
             y = self.extract_embed_y(k)
             ground_truths.append(y)
-            flat_defn = [tok for defn in raw_data[k] for tok in defn].join(" ") # Flatten def list into list of strings
+            flat_defn = " ".join([tok for defn in raw_data[k] for tok in defn]) # Flatten def list into list of strings
             flattened_defns.append(flat_defn)
         assert(len(flattened_defns) == len(ground_truths))
-        encoded_inputs = tokenizer(flattened_defns, padding=True, return_tensors="pt")
+        encoded_inputs = tokenizer(flattened_defns, padding=True, return_tensors="pt")['input_ids']
         for i in range(len(ground_truths)):
             X, y = encoded_inputs[i], ground_truths[i]
             self.samples.append((X, y))
@@ -36,7 +36,7 @@ class JSonDataset(Dataset):
         text_index = self.tokenizer.encode(word, add_prefix_space=True)
         embed_y = self.word_embeds[text_index,:]
         if len(text_index) > 1: # Return average of embeddings
-            embed_y_avg = torch.stack(embed_y).mean(dim=0)
+            embed_y_avg = torch.stack(embed_y.unbind()).mean(dim=0)
             return embed_y_avg
         return embed_y
 
