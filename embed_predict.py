@@ -8,15 +8,23 @@ import torch
 from torch.utils.data import random_split, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-from transformers import GPT2Tokenizer, TFGPT2Model, GPT2LMHeadModel
+from transformers import GPT2LMHeadModel, BertLMHeadModel, GPT2Tokenizer, BertTokenizer, AutoTokenizer
 from dataset import JSonDataset
 
 # https://github.com/huggingface/transformers/issues/1458
+
+# GPT-2
 gpt2_pt_model = GPT2LMHeadModel.from_pretrained('gpt2', output_hidden_states=True)  # or any other checkpoint
 word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings
-# position_embeddings = model.transformer.wpe.weight  # Word Position Embeddings 
+# position_embeddings = gpt2_pt_model.transformer.wpe.weight  # Word Position Embeddings 
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+
+# Bert
+# bert_pt_model = BertLMHeadModel.from_pretrained('bert-base-uncased', output_hidden_states=True, is_decoder=True)  # or any other checkpoint
+# tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+# tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+# word_embeddings = bert_pt_model.get_input_embeddings()  # Word Token Embeddings
 
 def split_data(dataset):
     train_size, val_size = int(0.8 * len(dataset)), int(0.1 * len(dataset))
@@ -39,9 +47,13 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
         for i, data in enumerate(train_dl):
             input, label = data # input = tokenized+padded defn, label = ground truth pretrained embedding
             optimizer.zero_grad()
+            # Bert error: ValueError: too many values to unpack (expected 2)
             outputs = model(**input) # odict_keys(['logits', 'past_key_values', 'hidden_states'])
             # output['hidden states'] is a Tuple of torch.FloatTensor of shape (batch_size, sequence_length, hidden_size)
-            last_hidden_state = outputs['hidden_states'][-1] # ERROR HERE: size now is [1, 1, x, 768] where x = seq length. Need to be [1, 768]
+            last_hidden_state = (outputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
+            if (last_hidden_state.size() != label.size()): # Sometimes label.size() is [1, 1, 768]. Not sure why
+               label = label.squeeze(dim=0)
+            assert(last_hidden_state.size() == label.size()) # torch.Size([1, 768])
             loss = loss_fn(last_hidden_state, label)
             loss.backward()
             optimizer.step()

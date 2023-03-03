@@ -19,7 +19,8 @@ class JSonDataset(Dataset):
             flattened_defns.append(flat_defn)
         assert(len(flattened_defns) == len(ground_truths))
         for i in range(len(ground_truths)):
-            X, y = tokenizer(flattened_defns[i], padding=True, return_tensors="pt"), ground_truths[i] 
+            X, y = tokenizer(flattened_defns[i], padding=True, return_tensors="pt"), ground_truths[i] # GPT-2
+            # X, y = tokenizer(flattened_defns[i], padding=True, truncation=True, max_length=512, return_tensors="pt"), ground_truths[i] # Bert
             self.samples.append((X, y))
 
     def __len__(self):
@@ -32,8 +33,13 @@ class JSonDataset(Dataset):
         """
         Returns ground truth pretrained embedding for a given word
         """
+        # GPT-2
         text_index = self.tokenizer.encode(word, add_prefix_space=True)
         embed_y = self.word_embeds[text_index,:].detach()
+
+        # Bert
+        # text_index = self.tokenizer.encode(word, truncation=True, max_length=512)
+        # embed_y = self.word_embeds(torch.LongTensor(text_index)).detach()
         if len(text_index) > 1: # Return average of embeddings
             embed_y_avg = torch.stack(embed_y.unbind()).mean(dim=0)
             return embed_y_avg
