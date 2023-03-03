@@ -12,8 +12,8 @@ from transformers import GPT2Tokenizer, TFGPT2Model, GPT2LMHeadModel
 from dataset import JSonDataset
 
 # https://github.com/huggingface/transformers/issues/1458
-gpt2_pt_model = GPT2LMHeadModel.from_pretrained('gpt2')  # or any other checkpoint
-word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings 
+gpt2_pt_model = GPT2LMHeadModel.from_pretrained('gpt2', output_hidden_states=True)  # or any other checkpoint
+word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings
 # position_embeddings = model.transformer.wpe.weight  # Word Position Embeddings 
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -39,8 +39,9 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
         for i, data in enumerate(train_dl):
             input, label = data # input = tokenized+padded defn, label = ground truth pretrained embedding
             optimizer.zero_grad()
-            outputs = model(**input)
-            loss = loss_fn(outputs.last_hidden_state, label)
+            outputs = model(**input) # odict_keys(['logits', 'past_key_values', 'hidden_states'])
+            last_hidden_state = outputs['hidden_states'][-1]
+            loss = loss_fn(last_hidden_state, label)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
