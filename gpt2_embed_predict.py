@@ -51,8 +51,8 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-            if i % 1000 == 99:
-                avg_loss = running_loss / 1000 # loss per batch
+            if i % 100 == 99:
+                avg_loss = running_loss / 100 # loss per batch
                 print('  batch {} loss: {}'.format(i + 1, avg_loss))
                 tb_x = ep * len(train_dl) + i + 1
                 tb_writer.add_scalar('Loss/train', avg_loss, tb_x)

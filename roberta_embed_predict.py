@@ -14,10 +14,11 @@ from dataset import JSonDataset
 # https://github.com/huggingface/transformers/issues/1458
 
 # RoBERTa
+# roberta-large to avoid truncating?
 roberta_pt_model = RobertaForMaskedLM.from_pretrained('roberta-base', output_hidden_states=True, is_decoder=True)  # or any other checkpoint
 tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-word_embeddings = roberta_pt_model.embeddings.word_embeddings.weight # Word Token Embeddings # roberta_pt_model.get_input_embeddings()
+word_embeddings = roberta_pt_model.get_input_embeddings().weight # Word Token Embeddings # roberta_pt_model.embeddings.word_embeddings.weight
 
 def split_data(dataset):
     train_size, val_size = int(0.8 * len(dataset)), int(0.1 * len(dataset))
@@ -51,8 +52,8 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-            if i % 1000 == 99:
-                avg_loss = running_loss / 1000 # loss per batch
+            if i % 100 == 99:
+                avg_loss = running_loss / 100 # loss per batch
                 print('  batch {} loss: {}'.format(i + 1, avg_loss))
                 tb_x = ep * len(train_dl) + i + 1
                 tb_writer.add_scalar('Loss/train', avg_loss, tb_x)
