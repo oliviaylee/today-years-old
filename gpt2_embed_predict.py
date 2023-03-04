@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import random_split, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
-from transformers import GPT2LMHeadModel, BertLMHeadModel, GPT2Tokenizer, BertTokenizer, AutoTokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from dataset import JSonDataset
 
 # https://github.com/huggingface/transformers/issues/1458
@@ -20,12 +20,6 @@ word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-# Bert
-# bert_pt_model = BertLMHeadModel.from_pretrained('bert-base-uncased', output_hidden_states=True, is_decoder=True)  # or any other checkpoint
-# tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-# tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-# word_embeddings = bert_pt_model.get_input_embeddings()  # Word Token Embeddings
-
 def split_data(dataset):
     train_size, val_size = int(0.8 * len(dataset)), int(0.1 * len(dataset))
     test_size = len(dataset) - train_size - val_size
@@ -34,7 +28,7 @@ def split_data(dataset):
     return train_dl, val_dl, test_dl
 
 def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
-    common_data = JSonDataset('datasets/dict_wn.json', tokenizer, word_embeddings)
+    common_data = JSonDataset('datasets/dict_wn.json', 'gpt2', tokenizer, word_embeddings)
     train_dl, val_dl, test_dl = split_data(common_data)
     model = gpt2_pt_model
     loss_fn = torch.nn.MSELoss() #torch.nn.CosineEmbeddingLoss
@@ -47,7 +41,6 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
         for i, data in enumerate(train_dl):
             input, label = data # input = tokenized+padded defn, label = ground truth pretrained embedding
             optimizer.zero_grad()
-            # Bert error: ValueError: too many values to unpack (expected 2)
             outputs = model(**input) # odict_keys(['logits', 'past_key_values', 'hidden_states'])
             # output['hidden states'] is a Tuple of torch.FloatTensor of shape (batch_size, sequence_length, hidden_size)
             last_hidden_state = (outputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
