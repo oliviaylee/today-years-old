@@ -22,9 +22,9 @@ class JSonDataset(Dataset):
         for i in range(len(ground_truths)):
             X, y = None, None
             if self.model == 'gpt2':
-                X, y = tokenizer(flattened_defns[i], padding=True, return_tensors="pt"), ground_truths[i]
+                X, y = tokenizer(flattened_defns[i], padding='max_length', return_tensors="pt"), ground_truths[i]
             elif self.model == 'roberta':
-                X, y = tokenizer(flattened_defns[i], padding=True, truncation=True, max_length=512, return_tensors="pt"), ground_truths[i]
+                X, y = tokenizer(flattened_defns[i], padding='max_length', truncation=True, max_length=512, return_tensors="pt"), ground_truths[i]
             self.samples.append((X, y))
 
     def __len__(self):
@@ -47,4 +47,4 @@ class JSonDataset(Dataset):
         if len(text_index) > 1: # Return average of embeddings
             embed_y_avg = torch.stack(embed_y.unbind()).mean(dim=0)
             return embed_y_avg
-        return embed_y
+        return embed_y.squeeze(dim=0)
