@@ -25,10 +25,10 @@ def split_data(dataset):
     train_size, val_size = int(0.8 * len(dataset)), int(0.1 * len(dataset))
     test_size = len(dataset) - train_size - val_size
     train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
-    train_dl, val_dl, test_dl = DataLoader(train_set, batch_size=32, shuffle=True, num_workers=2), DataLoader(val_set, batch_size=1, shuffle=False, num_workers=2), DataLoader(test_set, batch_size=1, shuffle=False, num_workers=2)
+    train_dl, val_dl, test_dl = DataLoader(train_set, batch_size=1, shuffle=True, num_workers=2), DataLoader(val_set, batch_size=1, shuffle=False, num_workers=2), DataLoader(test_set, batch_size=1, shuffle=False, num_workers=2)
     return train_dl, val_dl, test_dl
 
-def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
+def train(timestamp, tb_writer, eps=100, lr=0.00003, batch_size=32): # TO TEST: How many eps?
     common_data = JSonDataset('datasets/dict_wn.json', 'gpt2', tokenizer, word_embeddings)
     train_dl, val_dl, test_dl = split_data(common_data)
     model = gpt2_pt_model
@@ -38,20 +38,26 @@ def train(timestamp, tb_writer, eps=100, lr=0.00003): # TO TEST: How many eps?
         print('EPOCH {}:'.format(ep + 1))
         # One pass through data
         model.train(True)
-        running_loss, avg_loss = 0.0, 0.0
+        running_loss, avg_loss, loss = 0.0, 0.0, torch.zeros([1])
         for i, data in enumerate(train_dl):
             input, label = data # input = tokenized+padded defn, label = ground truth pretrained embedding
-            optimizer.zero_grad()
             outputs = model(**input) # Dies here # odict_keys(['logits', 'past_key_values', 'hidden_states'])
             # output['hidden states'] is a Tuple of torch.FloatTensor of shape (batch_size, sequence_length, hidden_size)
-            last_hidden_state = (outputs['hidden_states'][-1].squeeze())[0]
-            if (last_hidden_state.size() != label.size()): 
-                # Sometimes last hidden state is [1]. Sometimes label.size() is [1, 1, 768]. Not sure why
+            last_hidden_state = (outputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
+            # Sometimes last hidden state is [1]. Sometimes label.size() is [1, 1, 768]. Not sure why
+            if (last_hidden_state.size() == torch.Size([1])): 
+                continue
+            elif (label.size() == torch.Size([1, 1, 768])):
                 label = label.squeeze(dim=0)
             assert(last_hidden_state.size() == label.size()) # torch.Size([1, 768])
-            loss = loss_fn(last_hidden_state, label) / 32 # CALC LOSS OVER THE BATCH
-            loss.backward()
-            optimizer.step()
+            loss += loss_fn(last_hidden_state, label) 
+            if i % batch_size == 0: # Sub-batching
+                loss = loss / batch_size # Average loss over the batch
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+                loss = torch.zeros([1])
+            # Logging
             running_loss += loss.item()
             if i % 100 == 99:
                 avg_loss = running_loss / 100 # loss per batch
