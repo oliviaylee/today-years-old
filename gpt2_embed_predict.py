@@ -28,7 +28,7 @@ def split_data(dataset):
     train_dl, val_dl, test_dl = DataLoader(train_set, batch_size=1, shuffle=True, num_workers=2), DataLoader(val_set, batch_size=1, shuffle=False, num_workers=2), DataLoader(test_set, batch_size=1, shuffle=False, num_workers=2)
     return train_dl, val_dl, test_dl
 
-def train(timestamp, tb_writer, lr=0.00003, eps=100, batch_size=32): # TO TEST: How many eps?
+def train(timestamp, tb_writer, lr=0.00003, eps=3, batch_size=32):
     common_data = JSonDataset('datasets/dict_wn.json', 'gpt2', tokenizer, word_embeddings)
     train_dl, val_dl, test_dl = split_data(common_data)
     model = gpt2_pt_model
