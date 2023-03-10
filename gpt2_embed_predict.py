@@ -100,8 +100,6 @@ def learn_urban():
         for line in open('datasets/urban_words.json', "r"):
             entry = json.loads(line)
             word = entry['lowercase_word']
-            if len(word.split(' ')) > 1: # Phrase
-                pass # TO-DO: Handling phrases
             defn = entry['definition'].lower()
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
