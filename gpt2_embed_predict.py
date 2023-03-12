@@ -106,7 +106,7 @@ def train(device, timestamp, tb_writer, lr=0.00003, eps=3, batch_size=32):
         # Track best performance, and save the model's state
         if avg_vloss < best_vloss:
             best_vloss = avg_vloss
-            model_path = 'model_{}_{}'.format(timestamp, ep)
+            model_path = 'gpt2_model_{}_{}'.format(timestamp, ep)
             trained_model_path = model_path
             torch.save(model.state_dict(), model_path)
 
@@ -128,11 +128,12 @@ def learn_urban(device, num_words=5000):
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
             input['input_ids'] = input['input_ids'].to(device)
             input['attention_mask'] = input['attention_mask'].to(device)
-            output = model(input_ids=input['input_ids'], attention_mask=input['attention_mask']) # output is predicted word embedding
+            outputs = model(input_ids=input['input_ids'], attention_mask=input['attention_mask']) # output is predicted word embedding
+            last_hidden_state = (outputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
             tokenizer.add_tokens(word)
             model.resize_token_embeddings(len(tokenizer))
-            model.transformer.wte.weight[:,-1] = output
-        torch.save(model.state_dict(), 'final_model')
+            model.transformer.wte.weight[:,-1] = last_hidden_state
+        torch.save(model.state_dict(), 'gpt2_final_model')
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
