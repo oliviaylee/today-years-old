@@ -19,14 +19,14 @@ class JSonDataset(Dataset):
             y = self.extract_embed_y(k)
             ground_truths.append(y)
             flat_defn = " ".join([tok for defn in raw_data[k] for tok in defn]) # Flatten def list into list of strings
-            input_defns.append(flat_defn)            
+            input_defns.append(flat_defn)
         assert(len(input_defns) == len(ground_truths))
         for i in range(len(ground_truths)):
             X, y = None, None
             if self.model == 'gpt2':
-                X, y = tokenizer(input_defns[i], padding='max_length', return_tensors="pt"), ground_truths[i]
+                X, y = tokenizer(input_defns[i], padding='max_length', return_tensors="pt"), torch.FloatTensor(ground_truths[i])
             elif self.model == 'roberta':
-                X, y = tokenizer(input_defns[i], padding='max_length', truncation=True, max_length=512, return_tensors="pt"), ground_truths[i]
+                X, y = tokenizer(input_defns[i], padding='max_length', truncation=True, max_length=512, return_tensors="pt"), torch.FloatTensor(ground_truths[i])
             self.samples.append((X, y))
 
     def __len__(self):
