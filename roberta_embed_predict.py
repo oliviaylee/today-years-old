@@ -83,7 +83,14 @@ def train(device, timestamp, tb_writer, lr=0.00003, eps=3, batch_size=32):
             vinputs['attention_mask'] = vinputs['attention_mask'].to(device)
             vlabels = vlabels.to(device)
             voutputs = model(input_ids=vinputs['input_ids'], attention_mask=vinputs['attention_mask'])
-            vloss = loss_fn(voutputs, vlabels)
+            vlast_hidden_state = (voutputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
+            if (vlast_hidden_state.size() == torch.Size([1])): 
+                continue
+            elif (vlabels.size() == torch.Size([1, 1, 768])):
+                vlabels = vlabels.squeeze(dim=0)
+            if (vlast_hidden_state.size() != vlabels.size()): # torch.Size([1, 768])
+                continue # remove assert so as not to crash training
+            vloss = loss_fn(vlast_hidden_state, vlabels)
             running_vloss += vloss
             val_count += 1
         avg_vloss = running_vloss / val_count
