@@ -31,7 +31,7 @@ def split_data(dataset):
     train_dl, val_dl = DataLoader(train_set, batch_size=1, shuffle=True, num_workers=2), DataLoader(val_set, batch_size=1, shuffle=False, num_workers=2)
     return train_dl, val_dl
 
-def train(device, timestamp, tb_writer, lr=0.00003, eps=3, batch_size=32):
+def train(device, timestamp, tb_writer, lr=0.00003, eps=1, batch_size=16):
     common_data = JSonDataset('datasets/dict_wn.json', 'gpt2', tokenizer, word_embeddings)
     train_dl, val_dl = split_data(common_data)
     model = gpt2_pt_model
@@ -93,6 +93,7 @@ def train(device, timestamp, tb_writer, lr=0.00003, eps=3, batch_size=32):
                     continue # remove assert so as not to crash training
                 vloss = loss_fn(vlast_hidden_state, vlabels)
                 running_vloss += vloss
+                val_count += 1
         avg_vloss = running_vloss / val_count
         print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
 
