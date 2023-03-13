@@ -77,22 +77,23 @@ def train(device, timestamp, tb_writer, lr=0.00003, eps=1, batch_size=16):
         # One set of eval
         model.train(False)
         running_vloss, val_count = 0.0, 0
-        for i, vdata in enumerate(val_dl):
-            vinputs, vlabels = vdata
-            vinputs['input_ids'] = vinputs['input_ids'].squeeze(dim=1).to(device)
-            vinputs['attention_mask'] = vinputs['attention_mask'].to(device)
-            vlabels = vlabels.to(device)
-            voutputs = model(input_ids=vinputs['input_ids'], attention_mask=vinputs['attention_mask'])
-            vlast_hidden_state = (voutputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
-            if (vlast_hidden_state.size() == torch.Size([1])): 
-                continue
-            elif (vlabels.size() == torch.Size([1, 1, 768])):
-                vlabels = vlabels.squeeze(dim=0)
-            if (vlast_hidden_state.size() != vlabels.size()): # torch.Size([1, 768])
-                continue # remove assert so as not to crash training
-            vloss = loss_fn(vlast_hidden_state, vlabels)
-            running_vloss += vloss
-            val_count += 1
+        with torch.no_grad():
+            for i, vdata in enumerate(val_dl):
+                vinputs, vlabels = vdata
+                vinputs['input_ids'] = vinputs['input_ids'].squeeze(dim=1).to(device)
+                vinputs['attention_mask'] = vinputs['attention_mask'].to(device)
+                vlabels = vlabels.to(device)
+                voutputs = model(input_ids=vinputs['input_ids'], attention_mask=vinputs['attention_mask'])
+                vlast_hidden_state = (voutputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
+                if (vlast_hidden_state.size() == torch.Size([1])): 
+                    continue
+                elif (vlabels.size() == torch.Size([1, 1, 768])):
+                    vlabels = vlabels.squeeze(dim=0)
+                if (vlast_hidden_state.size() != vlabels.size()): # torch.Size([1, 768])
+                    continue # remove assert so as not to crash training
+                vloss = loss_fn(vlast_hidden_state, vlabels)
+                running_vloss += vloss
+                val_count += 1
         avg_vloss = running_vloss / val_count
         print('LOSS train {} valid {}'.format(avg_loss, avg_vloss))
 
