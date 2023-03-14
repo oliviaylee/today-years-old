@@ -21,7 +21,6 @@ word_embeddings = gpt2_pt_model.transformer.wte.weight  # Word Token Embeddings
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 gpt2_pt_model.resize_token_embeddings(len(tokenizer))
-trained_model_path = None
 
 def split_data(dataset):
     train_size = int(0.9 * len(dataset))
@@ -38,7 +37,7 @@ def train(device, timestamp, tb_writer, lr=0.00003, eps=1, batch_size=16):
     model.to(device)
     loss_fn = torch.nn.MSELoss() #torch.nn.CosineEmbeddingLoss
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    best_vloss = float('inf')
+    best_vloss, trained_model_path = float('inf'), None
     for ep in range(eps):
         print('EPOCH {}:'.format(ep + 1))
         # One pass through data
@@ -108,10 +107,11 @@ def train(device, timestamp, tb_writer, lr=0.00003, eps=1, batch_size=16):
         if avg_vloss < best_vloss:
             best_vloss = avg_vloss
             model_path = 'gpt2_model_{}_{}'.format(timestamp, ep)
-            trained_model_path = model_path
             torch.save(model.state_dict(), model_path)
+            trained_model_path = model_path
+    return trained_model_path
 
-def learn_urban(device, num_words=5000):
+def learn_urban(device, trained_model_path, num_words=10000):
     model = gpt2_pt_model
     model.load_state_dict(torch.load(trained_model_path))
     model.to(device)
@@ -121,13 +121,12 @@ def learn_urban(device, num_words=5000):
         for line in open('datasets/urban_words.json', "r"):
             if counter == num_words:
                 break
-            counter += 1
             entry = json.loads(line)
-            word = entry['lowercase_word']
-            defn = entry['definition'].lower()
+            word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
+            if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 10): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
-            if len(input['input_ids']) == 1: continue
+            if len(input['input_ids']) == 1: continue # skip words that are common but in UD
             input['input_ids'] = input['input_ids'].to(device)
             input['attention_mask'] = input['attention_mask'].to(device)
             outputs = model(input_ids=input['input_ids'], attention_mask=input['attention_mask']) # output is predicted word embedding
@@ -135,6 +134,7 @@ def learn_urban(device, num_words=5000):
             tokenizer.add_tokens(word)
             model.resize_token_embeddings(len(tokenizer))
             model.transformer.wte.weight[:,-1] = last_hidden_state
+            counter += 1
         torch.save(model.state_dict(), 'gpt2_final_model')
 
 def main():
@@ -144,10 +144,10 @@ def main():
     writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
 
     # PHASE 1: Train model on dict of common words to learn r/s between defns and embeddings 
-    train(device, timestamp, writer)
+    trained_model_path = train(device, timestamp, writer)
 
     # PHASE 2: Add add new word embeddings to GPT2 given the new definitions
-    learn_urban(device)
+    learn_urban(device, trained_model_path)
 
 if __name__ == '__main__':
     main()
