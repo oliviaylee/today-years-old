@@ -1,2 +1,4 @@
 *urban_words.json
 run.sh
+*.out
+*runs/
