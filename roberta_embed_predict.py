@@ -16,7 +16,7 @@ from dataset import JSonDataset
 
 # RoBERTa
 # roberta-large to avoid truncating?
-roberta_pt_model = RobertaForMaskedLM.from_pretrained('roberta-base', output_hidden_states=True, is_decoder=True)  # or any other checkpoint
+roberta_pt_model = RobertaForMaskedLM.from_pretrained('roberta-base', output_hidden_states=True, is_decoder=False)  # or any other checkpoint
 word_embeddings = roberta_pt_model.get_input_embeddings() # Word Token Embeddings # roberta_pt_model.embeddings.word_embeddings.weight
 tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -126,6 +126,7 @@ def learn_urban(device, num_words=5000):
             defn = entry['definition'].lower()
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', truncation=True, max_length=512, return_tensors="pt")
+            if len(input['input_ids']) == 1: continue
             input['input_ids'] = input['input_ids'].squeeze(dim=1).to(device)
             input['attention_mask'] = input['attention_mask'].to(device)
             outputs = model(input_ids=input['input_ids'], attention_mask=input['attention_mask']) # output is predicted word embedding

@@ -127,6 +127,7 @@ def learn_urban(device, num_words=5000):
             defn = entry['definition'].lower()
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
+            if len(input['input_ids']) == 1: continue
             input['input_ids'] = input['input_ids'].to(device)
             input['attention_mask'] = input['attention_mask'].to(device)
             outputs = model(input_ids=input['input_ids'], attention_mask=input['attention_mask']) # output is predicted word embedding
