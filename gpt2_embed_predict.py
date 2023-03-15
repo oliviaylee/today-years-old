@@ -121,6 +121,10 @@ def learn_urban(device, trained_model_path, num_words=10000):
         for line in open('datasets/urban_words_reformat.json', "r"):
             if counter == num_words:
                 break
+            try:
+                json.loads(line)
+            except ValueError as e:
+                continue
             entry = json.loads(line)
             word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
             if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 10): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
