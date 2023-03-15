@@ -112,6 +112,7 @@ def train(device, timestamp, tb_writer, lr=0.00003, eps=3, batch_size=16):
     return trained_model_path
 
 def learn_urban(device, trained_model_path, num_words=10000):
+    print(trained_model_path)
     model = roberta_pt_model
     model.load_state_dict(torch.load(trained_model_path))
     model.to(device)
