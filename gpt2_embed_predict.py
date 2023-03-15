@@ -118,15 +118,15 @@ def learn_urban(device, trained_model_path, num_words=10000):
     model.eval()
     with torch.no_grad():
         counter = 0
-        for line in open('datasets/urban_words_50000.json', "r"):
+        for line in open('datasets/urban_words_reformat.json', "r"):
             if counter == num_words:
                 break
             entry = json.loads(line)
             word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
             if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 10): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
+            if len(tokenizer(word, return_tensors='pt')['input_ids']) == 1: continue # skip words that are common but in UD (naive test)
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
-            if len(input['input_ids']) == 1: continue # skip words that are common but in UD
             input['input_ids'] = input['input_ids'].to(device)
             input['attention_mask'] = input['attention_mask'].to(device)
             outputs = model(input_ids=input['input_ids'], attention_mask=input['attention_mask']) # output is predicted word embedding
@@ -144,6 +144,7 @@ def main():
     writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
 
     # PHASE 1: Train model on dict of common words to learn r/s between defns and embeddings 
+    # common_data = JSonDataset('datasets/dict_wn.json', 'gpt2', tokenizer, word_embeddings)
     trained_model_path = train(device, timestamp, writer)
 
     # PHASE 2: Add add new word embeddings to GPT2 given the new definitions

@@ -3,7 +3,7 @@ import json
 # Generating JSON Dataset
 def generate_json_subset():
     with open("datasets/urban_words.json", 'r') as f:
-        with open("datasets/urban_words_reformat", 'a') as g:
+        with open("datasets/urban_words_reformat.json", 'a') as g:
             for line in f.readlines():
                 g.write(line)
 
