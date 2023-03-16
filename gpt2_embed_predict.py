@@ -129,7 +129,7 @@ def learn_urban(device, trained_model_path, num_words=10000):
             entry = json.loads(line)
             word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
             if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 10): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
-            if len(tokenizer(word, return_tensors='pt')['input_ids']) == 1: continue # skip words that are common but in UD (naive test)
+            if len(tokenizer(word, return_tensors='pt')['input_ids'][0]) == 1: continue # skip words that are common but in UD (naive test)
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
             input['input_ids'] = input['input_ids'].to(device)
@@ -138,7 +138,7 @@ def learn_urban(device, trained_model_path, num_words=10000):
             last_hidden_state = (outputs['hidden_states'][-1].squeeze())[0].unsqueeze(dim=0)
             tokenizer.add_tokens(word)
             model.resize_token_embeddings(len(tokenizer))
-            model.transformer.wte.weight[:,-1] = last_hidden_state
+            model.transformer.wte.weight[-1] = last_hidden_state
             counter += 1
         torch.save(model.state_dict(), 'gpt2_final_model')
 
