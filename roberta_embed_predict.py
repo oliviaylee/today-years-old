@@ -119,7 +119,7 @@ def learn_urban(device, trained_model_path, num_words=10000):
     model.eval()
     with torch.no_grad():
         counter = 0
-        for line in open('datasets/urban_words_50000.json', "r"):
+        for line in open('datasets/urban_words_reformat.json', "r"):
             if counter == num_words:
                 break
             try:
