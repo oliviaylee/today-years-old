@@ -132,6 +132,8 @@ def learn_urban(device, trained_model_path, num_words=10000):
             if len(tokenizer(word, return_tensors='pt')['input_ids'][0]) == 1: continue # skip words that are common but in UD (naive test)
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
+            if input['input_ids'].size() != torch.Size([1, 1024]): # == torch.Size([1, 0]
+                continue
             input['input_ids'] = input['input_ids'].to(device)
             input['attention_mask'] = input['attention_mask'].to(device)
             outputs = model(input_ids=input['input_ids'], attention_mask=input['attention_mask']) # output is predicted word embedding
