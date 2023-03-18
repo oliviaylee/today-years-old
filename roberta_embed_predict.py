@@ -119,12 +119,12 @@ def learn_urban(device, trained_model_path):
     model.eval()
     with torch.no_grad():
         counter = 0
-        with open('datasets/urban_preprocessed.json', "r") as f:
+        with open('datasets/urban_common_100up.json', "r") as f:
             data = json.load(f)
             for entry in data:
                 word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
                 # data has been preprocessed
-                # if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 10): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
+                # if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 1000): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
                 # if len(tokenizer(word, return_tensors='pt')['input_ids'][0]) == 1: continue # skip words that are common but in UD (naive test)
                 # input is tokenized + padded defn
                 input = tokenizer(defn, padding='max_length', truncation=True, max_length=512, return_tensors="pt")
@@ -136,8 +136,8 @@ def learn_urban(device, trained_model_path):
                 model.resize_token_embeddings(len(tokenizer))
                 model.get_input_embeddings().weight.data[-1] = last_hidden_state
                 counter += 1
-        torch.save(model.state_dict(), 'roberta_final_model')
-        with open('roberta_tokenizer_vocab.json', 'w') as fp:
+        torch.save(model.state_dict(), 'ep3_common_words/roberta_final_model')
+        with open('ep3_common_words/roberta_tokenizer_vocab.json', 'w') as fp:
             json.dump(tokenizer.get_vocab(), fp)
 
 def main():
@@ -147,10 +147,10 @@ def main():
     writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
 
     # PHASE 1: Train model on dict of common words to learn r/s between defns and embeddings 
-    trained_model_path = train(device, timestamp, writer)
+    # trained_model_path = train(device, timestamp, writer)
 
     # PHASE 2: Add add new word embeddings to GPT2 given the new definitions
-    learn_urban(device, trained_model_path)
+    learn_urban(device, 'archive/epochs3/roberta_model_20230314_215451_2')
 
 if __name__ == '__main__':
     main()
