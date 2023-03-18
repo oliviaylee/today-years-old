@@ -120,11 +120,7 @@ def learn_urban(device, trained_model_path):
     with torch.no_grad():
         counter = 0
         with open('datasets/urban_preprocessed.json', "r") as f:
-            try:
-                json.loads(f)
-            except ValueError as e:
-                return
-            data = json.loads(f)
+            data = json.load(f)
             for entry in data:
                 word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
                 # data has been preprocessed
@@ -143,7 +139,7 @@ def learn_urban(device, trained_model_path):
                 model.transformer.wte.weight[-1] = last_hidden_state
                 counter += 1
         torch.save(model.state_dict(), 'gpt2_final_model')
-        with open('tokenizer_vocab.json', 'w') as fp:
+        with open('gpt2_tokenizer_vocab.json', 'w') as fp:
             json.dump(tokenizer.get_vocab(), fp)
 
 def main():
