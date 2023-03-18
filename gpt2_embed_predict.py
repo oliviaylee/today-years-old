@@ -119,7 +119,7 @@ def learn_urban(device, trained_model_path):
     model.eval()
     with torch.no_grad():
         counter = 0
-        with open('datasets/urban_common_100up.json', "r") as f:
+        with open('datasets/urban_words.json', "r") as f:
             data = json.load(f)
             for entry in data:
                 word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
@@ -138,8 +138,8 @@ def learn_urban(device, trained_model_path):
                 model.resize_token_embeddings(len(tokenizer))
                 model.transformer.wte.weight[-1] = last_hidden_state
                 counter += 1
-        torch.save(model.state_dict(), 'ep3_common_words/gpt2_final_model')
-        with open('ep3_common_words/gpt2_tokenizer_vocab.json', 'w') as fp:
+        torch.save(model.state_dict(), 'gpt2_final_model')
+        with open('gpt2_tokenizer_vocab.json', 'w') as fp:
             json.dump(tokenizer.get_vocab(), fp)
 
 def main():
@@ -150,10 +150,10 @@ def main():
 
     # PHASE 1: Train model on dict of common words to learn r/s between defns and embeddings 
     # common_data = JSonDataset('datasets/dict_wn.json', 'gpt2', tokenizer, word_embeddings)
-    # trained_model_path = train(device, timestamp, writer)
+    trained_model_path = train(device, timestamp, writer)
 
     # PHASE 2: Add add new word embeddings to GPT2 given the new definitions
-    learn_urban(device, 'archive/epochs3/gpt2_model_20230314_171819_2')
+    learn_urban(device, trained_model_path)
 
 if __name__ == '__main__':
     main()

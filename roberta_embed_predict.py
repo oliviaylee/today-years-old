@@ -136,8 +136,8 @@ def learn_urban(device, trained_model_path):
                 model.resize_token_embeddings(len(tokenizer))
                 model.get_input_embeddings().weight.data[-1] = last_hidden_state
                 counter += 1
-        torch.save(model.state_dict(), 'ep3_common_words/roberta_final_model')
-        with open('ep3_common_words/roberta_tokenizer_vocab.json', 'w') as fp:
+        torch.save(model.state_dict(), 'roberta_final_model')
+        with open('roberta_tokenizer_vocab.json', 'w') as fp:
             json.dump(tokenizer.get_vocab(), fp)
 
 def main():
@@ -147,10 +147,10 @@ def main():
     writer = SummaryWriter('runs/fashion_trainer_{}'.format(timestamp))
 
     # PHASE 1: Train model on dict of common words to learn r/s between defns and embeddings 
-    # trained_model_path = train(device, timestamp, writer)
+    trained_model_path = train(device, timestamp, writer)
 
     # PHASE 2: Add add new word embeddings to GPT2 given the new definitions
-    learn_urban(device, 'archive/epochs3/roberta_model_20230314_215451_2')
+    learn_urban(device, trained_model_path)
 
 if __name__ == '__main__':
     main()
