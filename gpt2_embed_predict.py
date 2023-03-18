@@ -119,7 +119,7 @@ def learn_urban(device, trained_model_path, num_words=10000):
     model.eval()
     with torch.no_grad():
         counter = 0
-        for line in open('datasets/urban_words.json', "r"):
+        for line in open('datasets/urban_preprocessed.json', "r"):
             if counter == num_words:
                 break
             try:
@@ -128,8 +128,9 @@ def learn_urban(device, trained_model_path, num_words=10000):
                 continue
             entry = json.loads(line)
             word, defn, upv, downv = entry['lowercase_word'], entry['definition'].lower(), int(entry["thumbs_up"]), int(entry["thumbs_down"])
-            if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 10): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
-            if len(tokenizer(word, return_tensors='pt')['input_ids'][0]) == 1: continue # skip words that are common but in UD (naive test)
+            # data has been preprocessed
+            # if (len(word.split(' ')) > 1) or (downv > upv) or (upv < 10): continue # skip phrases, words with more downvotes than upvotes, or too few upvotes
+            # if len(tokenizer(word, return_tensors='pt')['input_ids'][0]) == 1: continue # skip words that are common but in UD (naive test)
             # input is tokenized + padded defn
             input = tokenizer(defn, padding='max_length', return_tensors="pt")
             if input['input_ids'].size() != torch.Size([1, 1024]): # == torch.Size([1, 0]
@@ -143,6 +144,8 @@ def learn_urban(device, trained_model_path, num_words=10000):
             model.transformer.wte.weight[-1] = last_hidden_state
             counter += 1
         torch.save(model.state_dict(), 'gpt2_final_model')
+        with open('tokenizer_vocab.json', 'w') as fp:
+            json.dump(tokenizer.get_vocab(), fp)
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
