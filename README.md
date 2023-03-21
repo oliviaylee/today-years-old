@@ -12,6 +12,7 @@ This approach involves finetuning a large language model (GPT-2 or RoBERTa) to l
 ## Evaluation Methods: GPT-2 Causal LM and RoBERTa Masked LM
 - `gpt2_eval.py`: Evaluation using GPT-2 Causal LM task
 - `roberta_eval.py`: Evaluation using RoBERTa Masked LM task
+- `winodict_eval.ipynb`: Evaluation on WinoDict dataset
 
 ## Datasets
 Datasets can be found in the `datasets` folder. In particular,
