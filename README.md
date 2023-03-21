@@ -16,6 +16,6 @@ This approach involves finetuning a large language model (GPT-2 or RoBERTa) to l
 
 ## Datasets
 Datasets can be found in the `datasets` folder. In particular,
-- `dict_wn.json`: Dictionary of common words (used for training in Approach 2)
-- Urban Dictionary data: (file too big for upload) Used to provide definitions of novel lexical items to be incorporated into the models (used in both Approach 1 and 2.
+- `dict_wn.json`: Dictionary of common words (used for training model in our approach)
+- Urban Dictionary data: (file too big for upload) Used to provide definitions of novel lexical items to be incorporated into the models (used for model expansion/evaluation).
 - `urban_preprocess.py`: Used to preprocess Urban Dictionary data
