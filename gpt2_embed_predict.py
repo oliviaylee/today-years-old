@@ -1,7 +1,9 @@
 """
-Method 2: Train a separate neural network to predict the word embedding given the 
-definition, using a dictionary of common words as the input and the word embeddings 
+Code Author: Olivia Lee
+Proposed Approach: Train a separate neural network to predict the word embedding given 
+the definition, using a dictionary of common words as the input and the word embeddings 
 already in the model as the output.
+This approach finetunes the pretrained GPT-2 Language Model (unidirectional).
 """
 
 import json

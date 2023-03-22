@@ -1,3 +1,9 @@
+"""
+Code Author: Olivia Lee
+Loads and preprocesses JSon datasets to generate training data (inputs and labels)
+Used in `gpt2_embed_predict.py` and `roberta_embed_predict.py`.
+"""
+
 import torch
 from torch.utils.data import Dataset
 import json
